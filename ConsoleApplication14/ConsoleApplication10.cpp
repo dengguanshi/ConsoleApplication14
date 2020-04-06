@@ -380,8 +380,7 @@ void categorizer::category_By_svm()
 
         //Mat a;
         //test.col(0).copyTo(a.col(0));
-       // cout << "size()" << endl;
-       // cout << test.size() << endl;//[1000 x 1]
+
 
        //// step1(i) :每一维元素的通道数
        // cout << test.step1(0) << endl;//1000
