@@ -1,15 +1,32 @@
 #pragma once
+
 #include <opencv2/core/core.hpp>
 #include <iostream>
 #include <time.h>
 #include <vector>
+#include <opencv2/ml/ml.hpp>
 #include <map>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2\core\core_c.h>
-using namespace std;
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/xfeatures2d.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
+#include <fstream>
+#include <cstring>
+#include <iterator>
+#include <vector>
+#include <map>
+#include<fstream>
+#include <opencv2\imgproc\types_c.h>
+#include "opencv2/imgcodecs/legacy/constants_c.h"
 using namespace cv;
+using namespace cv::xfeatures2d;
+using namespace std;
+using namespace cv::ml;
 
 Mat ReadFloatImg(const char* szFilename);
 class IPoint :public Point2f
@@ -143,4 +160,58 @@ public:
 	vector<IPoint> GetAllFeatures(Mat img);
 };
 
+class categorizer
+{
+private:
+	// //从类目名称到数据的map映射
+	map<string, Mat> result_objects;
+	//存放所有训练图片的BOW
+	map<string, Mat> allsamples_bow;
+	//从类目名称到训练图集的映射，关键字可以重复出现
+	multimap<string, Mat> train_set;
+	// 训练得到的SVM
+	Ptr<SVM>* stor_svms;
+	//类目名称，也就是TRAIN_FOLDER设置的目录名
+	vector<string> category_name;
+	//类目数目
+	int categories_size;
+	//用SURF特征构造视觉词库的聚类数目
+	int clusters;
+	//存放训练图片词典
+	Mat vocab;
+	Surf surf;
+	Visualize v;
+
+	Ptr<SURF> featureDecter;
+	Ptr<BOWKMeansTrainer> bowtrainer;
+	Ptr<BFMatcher> descriptorMacher;
+	Ptr<BOWImgDescriptorExtractor> bowDescriptorExtractor;
+
+	//构造训练集合
+	void make_train_set();
+	// 移除扩展名，用来讲模板组织成类目
+	string remove_extention(string);
+
+	Mat getMyMat(Mat);
+
+public:
+	//构造函数
+	categorizer(int);
+	// 聚类得出词典
+	void bulid_vacab();
+	//构造BOW
+	void compute_bow_image();
+	//训练分类器
+	void trainSvm();
+	//将测试图片分类
+	void category_By_svm();
+};
+
+
+//Mat Mycluster(const Mat& _descriptors)
+//{
+//	Mat labels, vocabulary;
+//	//kmeans(_descriptors, 1000, labels, termcrit, attempts, flags, vocabulary);
+//	return vocabulary;
+//}
 

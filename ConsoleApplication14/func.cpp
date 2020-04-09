@@ -1,6 +1,5 @@
 // surftest.cpp : 定义控制台应用程序的入口点。
 //
-
 #include <opencv2/core/core.hpp>
 #include <iostream>
 #include <time.h>

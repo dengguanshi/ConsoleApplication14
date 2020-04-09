@@ -24,9 +24,27 @@
     <ClCompile Include="ConsoleApplication10.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="ConsoleApplication16.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="TestKmeans.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="func.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ANNKmeans.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="TestKmeans.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -2,7 +2,24 @@
 //
 
 #include <iostream>
+#include "func.h"
+#include "TestKmeans.h"
 
+int main(void)
+{
+    test_opencv_kmeans();
+    //int clusters = 1000;
+    //categorizer c(clusters);
+    ////特征聚类
+    //c.bulid_vacab();
+    ////构造BOW
+    //c.compute_bow_image();
+    ////训练分类器
+    //c.trainSvm();
+    ////将测试图片分类
+    //c.category_By_svm();
+    return 0;
+}
 
 // 运行程序: Ctrl + F5 或调试 >“开始执行(不调试)”菜单
 // 调试程序: F5 或调试 >“开始调试”菜单

@@ -17,7 +17,7 @@
 #include <opencv2\imgproc\types_c.h>
 #include "opencv2/imgcodecs/legacy/constants_c.h"
 #include "func.h"
-
+#include "ANNKmeans.h"
 
 using namespace cv;
 using namespace cv::xfeatures2d;
@@ -29,50 +29,6 @@ using namespace cv::ml;
 #define TEMPLATE_FOLDER "data/templates/"
 #define TEST_FOLDER "data/test_image"
 #define RESULT_FOLDER "data/result_image/"
-
-
-class categorizer
-{
-private:
-    // //从类目名称到数据的map映射
-    map<string, Mat> result_objects;
-    //存放所有训练图片的BOW
-    map<string, Mat> allsamples_bow;
-    //从类目名称到训练图集的映射，关键字可以重复出现
-    multimap<string, Mat> train_set;
-    // 训练得到的SVM
-    Ptr<SVM>* stor_svms;
-    //类目名称，也就是TRAIN_FOLDER设置的目录名
-    vector<string> category_name;
-    //类目数目
-    int categories_size;
-    //用SURF特征构造视觉词库的聚类数目
-    int clusters;
-    //存放训练图片词典
-    Mat vocab;
-
-    Ptr<SURF> featureDecter;
-    Ptr<BOWKMeansTrainer> bowtrainer;
-    Ptr<BFMatcher> descriptorMacher;
-    Ptr<BOWImgDescriptorExtractor> bowDescriptorExtractor;
-
-    //构造训练集合
-    void make_train_set();
-    // 移除扩展名，用来讲模板组织成类目
-    string remove_extention(string);
-
-public:
-    //构造函数
-    categorizer(int);
-    // 聚类得出词典
-    void bulid_vacab();
-    //构造BOW
-    void compute_bow_image();
-    //训练分类器
-    void trainSvm();
-    //将测试图片分类
-    void category_By_svm();
-};
 
 // 移除扩展名，用来讲模板组织成类目
 string categorizer::remove_extention(string full_name)
@@ -155,7 +111,25 @@ void categorizer::make_train_set()
     categories_size = category_name.size();
     cout << "发现 " << categories_size << "种类别物体..." << endl;
 }
+Mat categorizer::getMyMat(Mat mymat) {
 
+
+    vector<IPoint> ips1 = surf.GetAllFeatures(mymat);
+    std::cout << "ips1" << endl;
+    std::cout << ips1.size() << endl;
+    Mat test;//行 列
+    for (int t = 0; t < ips1.size(); t++) {
+        Mat tempmat(1, 64, CV_32F, ips1[t].descriptor);
+        test.push_back(tempmat);
+        //std::cout << "进入循环" << endl;
+        //float* value = ips1[t].descriptor;//读出第i行第j列像素值
+        //std::cout << " this->IPoints[t].descriptor" << endl;
+        //test.at<float>(0, t) = *value; //将第i行第j列像素值设置为128
+    }
+    std::cout << "循环外" << endl;
+    cout << test.size() << endl;//[1000 x 1]
+    return test;
+}
 // 训练图片feature聚类，得出词典
 void categorizer::bulid_vacab()
 {
@@ -176,24 +150,39 @@ void categorizer::bulid_vacab()
         {
             vector<KeyPoint>kp;
             Mat templ = (*i).second;
-            Mat descrip;
-            featureDecter->detect(templ, kp);
-            //cout << templ << endl;
-            featureDecter->compute(templ, kp, descrip);
-            //push_back(Mat);在原来的Mat的最后一行后再加几行,元素为Mat时， 其类型和列的数目 必须和矩阵容器是相同的
-            vocab_descriptors.push_back(descrip);
-            //cout << descrip << endl;
-            cout << descrip.size() << endl;
+            cout << templ.type() << endl;
+            templ.convertTo(templ, CV_32F);
+            cout << templ.type() << endl;
+            vocab_descriptors.push_back(getMyMat(templ));
+            cout << "getMyMat" << endl;
+            //Mat descrip;
+            //featureDecter->detect(templ, kp);
+            ////cout << templ << endl;
+            //featureDecter->compute(templ, kp, descrip);
+            //cout << "descrip" << endl;
+            //cout << descrip.type() << endl;//5
+            //cout << descrip.size() << endl;//[64 x 20700]
+            ////push_back(Mat);在原来的Mat的最后一行后再加几行,元素为Mat时， 其类型和列的数目 必须和矩阵容器是相同的
+            //vocab_descriptors.push_back(descrip);
+            ////cout << descrip << endl;
+            //cout << descrip.size() << endl;//[64 x 20700]
         }
         vocab_descriptors.convertTo(vocab_descriptors, CV_32F);
         //cout << vocab_descriptors << endl;
         cout << "训练图片开始聚类..." << endl;
         //将每一副图的ORB特征加入到bowTraining中去,就可以进行聚类训练了
         // 对ORB描述子进行聚类
-
+        cout << "vocab_descriptors" << endl;
+        cout << vocab_descriptors.type() << endl;//5
+        cout << vocab_descriptors.size() << endl;//[64 x 21460]列 行
+            
+            
         vocab = bowtrainer->cluster(vocab_descriptors);
         cout << "聚类完毕，得出词典..." << endl;
+        cout << "vocab" << endl;
+        cout << vocab.type() << endl;//5
 
+        cout << vocab.size() << endl;//[64 x 1000]
         //以文件格式保存词典
         FileStorage file_stor(DATA_FOLDER "vocab.xml", FileStorage::WRITE);
         file_stor << "vocabulary" << vocab;
@@ -352,31 +341,33 @@ void categorizer::category_By_svm()
         Mat newImage;
         gray_pic.convertTo(newImage, CV_32F);
 
-        Mat test1;
+        Mat test;
         featureDecter->detect(gray_pic, kp);
         cout << gray_pic.size() << endl;
-        bowDescriptorExtractor->compute(gray_pic, kp, test1);
-        cout << gray_pic.size() << endl;
-        cout << test1.size() << endl;
-        Surf surf;
-	    Visualize v;
-        std::cout << "Visualize外" << endl;
-        cout << input_pic.depth() << endl;
-        cout << input_pic.type() << endl;
-        
-	    vector<IPoint> ips1 = surf.GetAllFeatures(newImage);
-        std::cout << "循环外" << endl;
-        std::cout << ips1.size() << endl;
-        Mat test(1, 1000, CV_32F);
-        for (int t = 0; t < 1000; t++) {
-            std::cout << "进入循环" << endl;
-            float* value = ips1[t].descriptor;//读出第i行第j列像素值
-            std::cout << " this->IPoints[t].descriptor" << endl;
-            test.at<float>(0, t) = *value; //将第i行第j列像素值设置为128
-        }
-        std::cout << "循环外" << endl;
-         cout << test.size() << endl;
-     cout << test.size() << endl;//[1000 x 1]
+        bowDescriptorExtractor->compute(gray_pic, kp, test);
+     //   cout << gray_pic.size() << endl;
+     //   cout << test1.size() << endl;
+     //   Surf surf;
+	    //Visualize v;
+     //   std::cout << "Visualize外" << endl;
+     //   cout << input_pic.depth() << endl;
+     //   cout << input_pic.type() << endl;
+     //   
+	    //vector<IPoint> ips1 = surf.GetAllFeatures(newImage);
+     //   std::cout << "循环外" << endl;
+     //   std::cout << ips1.size() << endl;
+     //   Mat test;//行 列
+
+     //   for (int t = 0; t < ips1.size(); t++) {
+     //       //Mat tempmat(1, 64, CV_32F, ips1[t].descriptor);
+     //       //test.push_back(tempmat);
+     //       std::cout << "进入循环" << endl;
+     //       float *value = ips1[t].descriptor;//读出第i行第j列像素值
+     //       std::cout << " this->IPoints[t].descriptor" << endl;
+     //       test.at<float>(0, t) = *value; //将第i行第j列像素值设置为128
+     //   }
+     //   std::cout << "循环外" << endl;
+     //    cout << test.size() << endl;//[1000 x 1]
 
         //Mat a;
         //test.col(0).copyTo(a.col(0));
@@ -460,17 +451,3 @@ void categorizer::category_By_svm()
 }
 
 
-int main(void)
-{
-    int clusters = 1000;
-    categorizer c(clusters);
-    //特征聚类
-    c.bulid_vacab();
-    //构造BOW
-    c.compute_bow_image();
-    //训练分类器
-    c.trainSvm();
-    //将测试图片分类
-    c.category_By_svm();
-    return 0;
-}
