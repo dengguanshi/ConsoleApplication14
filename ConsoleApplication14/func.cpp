@@ -10,6 +10,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2\core\core_c.h>
 #include "func.h"
+#include "ANNKmeans.h"
 using namespace std;
 using namespace cv;
 
@@ -45,8 +46,6 @@ float IntegralImg::AreaSum(int x, int y, int dx, int dy)
 	double D = this->Integral.at<double>(r2, c2);
 	return (float)std::max(0.0, A + D - B - C);
 }
-
-
 ResponseLayer::ResponseLayer(IntegralImg* img, int octave, int interval)
 {
 	this->Step = (int)pow(2.0, octave - 1);

@@ -205,6 +205,7 @@ public:
 	void trainSvm();
 	//½«²âÊÔÍ¼Æ¬·ÖÀà
 	void category_By_svm();
+	Mat Mycluster(const Mat& _descriptors);
 };
 
 

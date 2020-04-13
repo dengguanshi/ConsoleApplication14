@@ -6,7 +6,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/ml.hpp>
 #include "common.h"
-#include "TestKmeans.h"
+#include "ANNKmeans.h"
 #include "ConsoleApplication16.cpp"
 
 ///////////////////////////////// K-Means ///////////////////////////////
@@ -48,26 +48,30 @@ int test_opencv_kmeans()
 			p1[(i - 1) * categories_number + j] = j;
 		}
 	}
+	//长度为行数的vector
+	std::vector<std::vector<float>> data(samples_data.rows);
 
-	const int K{ 4 }, attemps{ 100 };
-	//迭代运算的终结条件
-	const cv::TermCriteria term_criteria = cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 100, 0.01);
-	cv::Mat labels_, centers_;
-	int valueInt=kmeans(samples_data, K, labels_, term_criteria, attemps, cv::KMEANS_RANDOM_CENTERS, centers_);
-	double value = cv::kmeans(samples_data, K, labels_, term_criteria, attemps, cv::KMEANS_RANDOM_CENTERS, centers_);
+	for (int i = 0; i < samples_data.rows; ++i) {
+		data[i].resize(samples_data.cols);
+		const float* p = (const float*)samples_data.ptr(i);
+		memcpy(data[i].data(), p, sizeof(float) * samples_data.cols);
+	}
+	const int K{ 4 }, attemps{ 100 }, max_iter_count{ 100 };
+	const double epsilon{ 0.001 };
+	const int flags = ANN::KMEANS_RANDOM_CENTERS;
+	std::vector<int> best_labels;
+	double compactness_measure{ 0. };
+	std::vector<std::vector<float>> centers;
+	ANN::kmeans<float>(data, K, best_labels, centers, compactness_measure, max_iter_count, epsilon, attemps, flags);
 	fprintf(stdout, "K = %d, attemps = %d, iter count = %d, compactness measure =  %f\n",
-		K, attemps, term_criteria.maxCount, valueInt);
-	std::cout << "===============" ;
-	fprintf(stdout, "K = %d, attemps = %d, iter count = %d, compactness measure =  %f\n",
-		K, attemps, term_criteria.maxCount, value);
-	CHECK(labels_.rows == samples_number);
-	int* p2 = reinterpret_cast<int*>(labels_.data);
+		K, attemps, max_iter_count, compactness_measure);
+	CHECK(best_labels.size() == samples_number);
+	const auto* p2 = best_labels.data();
 	for (int i = 1; i <= every_class_number; ++i) {
 		for (int j = 0; j < categories_number; ++j) {
 			fprintf(stdout, "  %d  ", *p2++);
 		}
 		fprintf(stdout, "\n");
 	}
-
 	return 0;
 }

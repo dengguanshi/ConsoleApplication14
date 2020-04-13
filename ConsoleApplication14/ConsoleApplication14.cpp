@@ -7,17 +7,17 @@
 
 int main(void)
 {
-    test_opencv_kmeans();
-    //int clusters = 1000;
-    //categorizer c(clusters);
-    ////特征聚类
-    //c.bulid_vacab();
-    ////构造BOW
-    //c.compute_bow_image();
-    ////训练分类器
-    //c.trainSvm();
-    ////将测试图片分类
-    //c.category_By_svm();
+    //test_opencv_kmeans();
+    int clusters = 1000;
+    categorizer c(clusters);
+    //特征聚类
+    c.bulid_vacab();
+    //构造BOW
+    c.compute_bow_image();
+    //训练分类器
+    c.trainSvm();
+    //将测试图片分类
+    c.category_By_svm();
     return 0;
 }
 

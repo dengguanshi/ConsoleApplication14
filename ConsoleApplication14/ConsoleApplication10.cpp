@@ -17,7 +17,7 @@
 #include <opencv2\imgproc\types_c.h>
 #include "opencv2/imgcodecs/legacy/constants_c.h"
 #include "func.h"
-#include "ANNKmeans.h"
+#include "ConsoleApplication16.cpp"
 
 using namespace cv;
 using namespace cv::xfeatures2d;
@@ -129,6 +129,20 @@ Mat categorizer::getMyMat(Mat mymat) {
     std::cout << "循环外" << endl;
     cout << test.size() << endl;//[1000 x 1]
     return test;
+}
+Mat Mycluster(const Mat& _descriptors) {
+    Mat labels, vocabulary;
+    int K{ 4 }, attemps{ 100 };
+    int flags = ANN::KMEANS_RANDOM_CENTERS;
+    std::vector<int> best_labels;
+    double compactness_measure{ 0. };
+    const int myK{ 4 }, myattemps{ 100 }, max_iter_count{ 100 };
+    const double epsilon{ 0.001 };
+
+
+
+    //ANN::kmeans<float>(_descriptors, myK, best_labels, vocabulary, compactness_measure, max_iter_count, epsilon, myattemps, flags);
+    return vocabulary;
 }
 // 训练图片feature聚类，得出词典
 void categorizer::bulid_vacab()
@@ -274,27 +288,41 @@ void categorizer::trainSvm()
         cout << "训练分类器..." << endl;
         for (int i = 0; i < categories_size; i++)
         {
+            //在Mat中，将一个Mat放在另一个Mat中的时候，就可以使用push_back，但是需要保持列相同
+            //创建0*category_name.col的mat对象
             Mat tem_Samples(0, allsamples_bow.at(category_name[i]).cols, allsamples_bow.at(category_name[i]).type());
+            //0行1列CV_32SC1类型的图像
             Mat responses(0, 1, CV_32SC1);
+            //tem_Samples为列数相同的图像
             tem_Samples.push_back(allsamples_bow.at(category_name[i]));
+            //创建行数为 训练图像的行，列数为 1，类型为 CV_32SC1 的图像，并将所有元素初始化为值 （1，1，1，1）；
             Mat posResponses(allsamples_bow.at(category_name[i]).rows, 1, CV_32SC1, Scalar::all(1));
+            //responses为行数的1
             responses.push_back(posResponses);
+
 
             for (map<string, Mat>::iterator itr = allsamples_bow.begin(); itr != allsamples_bow.end(); ++itr)
             {
                 if (itr->first == category_name[i]) {
                     continue;
                 }
+                //---训练图像拼接，遍历的图像在前面，其他图像拼接在后面
                 tem_Samples.push_back(itr->second);
+                //---训练图像行数总和拼接，遍历的图像在前面，其他图像拼接在后面
                 Mat response(itr->second.rows, 1, CV_32SC1, Scalar::all(-1));
                 responses.push_back(response);
             }
             //设置训练参数
             stor_svms[i] = SVM::create();
+            //CvSVM::C_SVC C类支持向量分类机 n类分组(n \geq 2)，允许用异常值惩罚因子C进行不完全分类。
             stor_svms[i]->setType(SVM::C_SVC);
+            //CvSVM::LINEAR 线性内核。没有任何向映射至高维空间，线性区分（或回归）在原始特征空间中被完成，这是最快的选择。K(x_i, x_j) = x_i^T x_j.
             stor_svms[i]->setKernel(SVM::LINEAR);
+            //内核函数（POLY/ RBF/ SIGMOID）的参数\gamma。
             stor_svms[i]->setGamma(3);
+            //设置/获取SVM训练时迭代终止条件，默认值是
             stor_svms[i]->setTermCriteria(TermCriteria(CV_TERMCRIT_ITER, 100, 1e-6));
+            //用于训练/预测，均使用基类StatModel中的
             stor_svms[i]->train(tem_Samples, ROW_SAMPLE, responses);
             //存储svm
             string svm_filename = string(DATA_FOLDER) + category_name[i] + string("SVM.xml");
@@ -340,10 +368,9 @@ void categorizer::category_By_svm()
 
         Mat newImage;
         gray_pic.convertTo(newImage, CV_32F);
-
+        cout <<"提取BOW描述子"  << endl;
         Mat test;
         featureDecter->detect(gray_pic, kp);
-        cout << gray_pic.size() << endl;
         bowDescriptorExtractor->compute(gray_pic, kp, test);
      //   cout << gray_pic.size() << endl;
      //   cout << test1.size() << endl;
@@ -391,7 +418,7 @@ void categorizer::category_By_svm()
          //   elemSize1()：每个通道大小，单位字节
 
 
-
+        cout << test.size() << endl;//gray_pic.size=934x933
 
 
 
